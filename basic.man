@@ -1,0 +1,351 @@
+[4mBASIC[24m(1)                    General Commands Manual                   [4mBASIC[24m(1)
+
+[1mNAME[0m
+       basic - extended integer BASIC interpreter
+
+[1mSYNOPSIS[0m
+       [1mbasic[0m
+
+[1mDESCRIPTION[0m
+       [4mBasic[24m  is  an interactive BASIC interpreter written in strict K&R C for
+       the AT&T 3B2 and other System V systems.  It is an [4minteger[24m  BASIC:  all
+       numbers  are  signed  32-bit  integers, and there is no floating point.
+       Strings of up to 80 characters,  one-dimensional  arrays,  subroutines,
+       and file save and load are supported.
+
+       When started, the interpreter prints a banner and the prompt ``[1m? [22m''.  A
+       line that begins with a line number is stored in the program; any other
+       line  is  executed immediately.  Input is read from the standard input,
+       so program text and commands may also be piped in.
+
+       Keywords may be typed in upper or  lower  case.   Text  outside  double
+       quotes is converted to upper case when a line is entered, so [1mLIST [22mshows
+       keywords in upper case and string literals exactly as typed.
+
+[1mCOMMANDS[0m
+       These are recognized only at the prompt, not inside a program.
+
+       [1mRUN         [22mClear  all  variables  and  run the program from its lowest
+                   line number.  The random number  seed  is  not  reset  (see
+                   [1mRND[22m).
+
+       [1mLIST [4m[22m[n[-m]][0m
+                   List  the  program.   [1mLIST  [22mlists every line, [1mLIST 50 [22mlists
+                   line 50, [1mLIST 50-90 [22mlists lines 50  through  90,  [1mLIST  50-[0m
+                   lists  from  line  50  to the end, and [1mLIST -90 [22mlists up to
+                   line 90.
+
+       [1mNEW         [22mDelete the program and clear all variables.
+
+       [1mSAVE [4m[22m"file"[24m Write the program to [4mfile[24m as text, one  numbered  line  per
+                   line.  Prints [1mSAVED[22m.
+
+       [1mLOAD [4m[22m"file"[24m Delete  the  current program, then read numbered lines from
+                   [4mfile[24m.  Prints [1mLOADED[22m.  The file  name  must  be  in  double
+                   quotes.
+
+       [1mBYE         [22mLeave the interpreter.  End-of-file (usually CTRL-D) at the
+                   prompt does the same.
+
+       Typing  a  line number followed by nothing deletes that line.  Typing a
+       line number followed by text inserts or replaces that line.  Line  num‐
+       bers may be any non-negative integer; lines are kept in order.
+
+[1mVARIABLES AND TYPES[0m
+       Variable names are a single letter.  There are 26 numeric variables [1mA[22m-[1mZ[0m
+       and 26 string variables [1mA$[22m-[1mZ$[22m.  Arrays are one-dimensional: [1mA(n) [22mis nu‐
+       meric and [1mA$(n) [22mis a string array.  Array subscripts run from 0 through
+       the  declared  size.  An array that is used without being declared with
+       [1mDIM [22mhas subscripts 0 through 10.  Scalars and arrays of the same letter
+       are separate variables (for example [1mA [22mand [1mA(1)[22m).  Numeric variables and
+       arrays start at 0 and string variables at the empty string.
+
+       Numbers are signed 32-bit integers,  from  -2147483648  to  2147483647.
+       Arithmetic that overflows wraps around silently.  To write the smallest
+       value,  use  [1m-2147483647-1[22m.  Strings hold at most 80 characters; longer
+       results are silently truncated.
+
+[1mEXPRESSIONS[0m
+       Operators, from highest precedence to lowest:
+
+           ^                       exponentiation (right to left)
+           unary -  unary +
+           *  /  MOD               multiply, divide, remainder
+           +  -                    add, subtract
+           =  <>  <  >  <=  >=     comparison
+           NOT
+           AND
+           OR
+
+       Division truncates toward  zero.   [1mMOD  [22mtakes  the  sign  of  its  left
+       operand.   A negative exponent yields 0 (1 if the base is 1).  Division
+       or [1mMOD [22mby zero is an error.  Because unary minus ranks below [1m^[22m, [1m-2^2 [22mis
+       -4.
+
+       Comparisons yield -1 for true and 0 for false.  [1mAND[22m, [1mOR[22m, and [1mNOT  [22moper‐
+       ate  bitwise  on  the 32-bit values, as in Microsoft BASIC.  This means
+       [1mNOT 5 [22mis -6, which is non-zero and therefore true when tested by [1mIF[22m.
+
+       Strings may be joined with [1m+[22m.  Two strings may be compared with [1m=[22m,  [1m<>[22m,
+       [1m<[22m,  [1m>[22m, [1m<=[22m, and [1m>=[22m; the comparison is by character code.  Mixing strings
+       and numbers in one expression is a [1mTYPE MISMATCH [22merror.
+
+[1mSTATEMENTS[0m
+       Several statements may be placed on one line, separated by colons.
+
+       [1m[LET] [4m[22mvar[24m [1m= [4m[22mexpr[0m
+              Assignment.  [1mLET [22mis optional.
+
+       [1mPRINT [4m[22mlist[0m
+              Print the items in [4mlist[24m,  which  are  expressions  separated  by
+              semicolons  or  commas.   [1m?   [22mmay  be used in place of [1mPRINT[22m.  A
+              semicolon prints the next item immediately  after  the  previous
+              one.   A comma moves to the next 14-column print zone.  A trail‐
+              ing semicolon or comma suppresses the  final  newline.   Numbers
+              are printed with no leading or trailing blanks.
+
+       [1mINPUT ["prompt"; or ,] [4m[22mvar[24m[1m[,[4m[22mvar[24m[1m...][0m
+              Read  values  from  the  terminal.   With  a semicolon after the
+              prompt, or no prompt, the prompt is followed by ``[1m? [22m''.  With  a
+              comma  after  the  prompt, no question mark is printed.  Several
+              variables may be answered on one line separated  by  commas;  if
+              too  few values are given, ``[1m?? [22m'' asks for the rest.  A non-nu‐
+              meric answer to a numeric variable prints [1m?REDO FROM  START  [22mand
+              the  whole  [1mINPUT  [22mis  asked  again.  An empty numeric answer is
+              taken as 0.  End-of-file stops the program.
+
+       [1mIF [4m[22mcond[24m [1mTHEN [4m[22mstatement[24m [1m[ELSE [4m[22mstatement[24m[1m][0m
+
+       [1mIF [4m[22mcond[24m [1mTHEN [4m[22mline[24m [1m[ELSE [4m[22mline[24m[1m][0m
+
+       [1mIF [4m[22mcond[24m [1mGOTO [4m[22mline[0m
+              Conditional execution.  [4mCond[24m is true if non-zero.  A line number
+              after [1mTHEN [22mor [1mELSE [22mmeans [1mGOTO[22m.  Statements following the  chosen
+              branch on the same line, separated by colons, are executed after
+              it.
+
+       [1mGOTO [4m[22mexpr[0m
+
+       [1mGOSUB [4m[22mexpr[0m
+              Jump  to,  or call as a subroutine, the line whose number is the
+              value of [4mexpr[24m.  Computed targets such as [1mGOTO 100*N [22mare allowed.
+              Typing [1mGOTO [22mat the prompt starts the program at that line.
+
+       [1mRETURN [22mReturn from the most recent [1mGOSUB[22m.
+
+       [1mFOR [4m[22mv[24m [1m= [4m[22ma[24m [1mTO [4m[22mb[24m [1m[STEP [4m[22mc[24m[1m][0m
+
+       [1mNEXT [[4m[22mv[24m[1m[,[4m[22mv[24m[1m...]][0m
+              Counting loop.  The step defaults to 1 and may be negative.  The
+              body always executes at least once, even if the  starting  value
+              is  already  past  the  limit,  as  in  classic Microsoft BASIC.
+              Restarting a [1mFOR [22mon a variable that is already  active  discards
+              that loop and any loops inside it.
+
+       [1mDIM [4m[22mA[24m[1m([4m[22mn[24m[1m)[,[4m[22mB$[24m[1m([4m[22mn[24m[1m)...][0m
+              Declare  arrays with subscripts 0 through [4mn[24m.  Numeric arrays may
+              be up to size 5000 and string arrays up to  500.   Declaring  an
+              existing array again discards its contents.
+
+       [1mDATA [4m[22mitem[24m[1m[,[4m[22mitem[24m[1m...][0m
+
+       [1mREAD [4m[22mvar[24m[1m[,[4m[22mvar[24m[1m...][0m
+
+       [1mRESTORE[0m
+              [1mDATA  [22mholds  numbers  and  quoted  strings.  [1mREAD [22mtakes the next
+              items in program order, and [1mRESTORE [22mreturns to the  first  item.
+              Reading  past  the  end  is  an [1mOUT OF DATA [22merror, and reading a
+              string into a numeric variable or the reverse is a [1mTYPE MISMATCH[0m
+              error.
+
+       [1mREM [4m[22mtext[0m
+
+       [1m' [4m[22mtext[24m A comment.  Everything to the end of the line is ignored, colons
+              included.
+
+       [1mRANDOMIZE [[4m[22mn[24m[1m][0m
+              Set the random number seed to [4mn[24m, or to the time of day if  [4mn[24m  is
+              omitted.
+
+       [1mCLS    [22mSend a form feed to the terminal.
+
+       [1mEND    [22mStop the program.
+
+       [1mSTOP   [22mStop the program and print [1mBREAK IN [4m[22mline[24m.
+
+       [1mGOSUB[22m, [1mRETURN[22m, [1mFOR[22m, and [1mNEXT [22mmay be used only inside a running program.
+       At the prompt they produce [1m?ILLEGAL DIRECT[22m.
+
+[1mFUNCTIONS[0m
+       [1mRND([4m[22mn[24m[1m)        [22mA  pseudo-random  integer from 1 through [4mn[24m.  [4mn[24m must be at
+                     least 1.  The generator starts from a  fixed  seed  every
+                     time  [4mbasic[24m  is  started, so a program that does not call
+                     [1mRANDOMIZE [22mproduces the same sequence each time.  The seed
+                     carries over from one [1mRUN [22mto the next within a session.
+
+       [1mSQR([4m[22mn[24m[1m)        [22mInteger square root, rounded down.  An error if [4mn[24m is neg‐
+                     ative.
+
+       [1mABS([4m[22mn[24m[1m)        [22mAbsolute value.
+
+       [1mSGN([4m[22mn[24m[1m)        [22m-1, 0, or 1 according to the sign of [4mn[24m.
+
+       [1mINT([4m[22mn[24m[1m)        [22mReturns [4mn[24m.  It is provided for compatibility,  since  all
+                     values are already integers.
+
+       [1mLEN([4m[22ms$[24m[1m)       [22mLength of a string.
+
+       [1mASC([4m[22ms$[24m[1m)       [22mCharacter  code of the first character, or 0 for an empty
+                     string.
+
+       [1mVAL([4m[22ms$[24m[1m)       [22mThe integer at the start of the string;  0  if  there  is
+                     none.
+
+       [1mCHR$([4m[22mn[24m[1m)       [22mA  one-character  string whose code is the low eight bits
+                     of [4mn[24m.
+
+       [1mSTR$([4m[22mn[24m[1m)       [22mThe number as a string, with no leading blank.
+
+       [1mLEFT$([4m[22ms$,n[24m[1m)   [22mThe first [4mn[24m characters.
+
+       [1mRIGHT$([4m[22ms$,n[24m[1m)  [22mThe last [4mn[24m characters.
+
+       [1mMID$([4m[22ms$,start[24m[1m[,[4m[22mlen[24m[1m])[0m
+                     [4mLen[24m characters starting  at  position  [4mstart[24m,  where  the
+                     first  character  is  position 1.  If [4mlen[24m is omitted, the
+                     rest of the string is returned.
+
+       [1mSPACE$([4m[22mn[24m[1m)     [22mA string of [4mn[24m blanks, 0 through 80.
+
+[1mINTERRUPTING[0m
+       The interrupt key (usually DEL or CTRL-C) stops a  running  program,  a
+       [1mLIST  [22min  progress,  and prints [1mBREAK IN [4m[22mline[24m.  At the prompt it simply
+       prints a new line and prompts again.  Variables are kept, so  the  pro‐
+       gram can be examined or run again.
+
+[1mDIAGNOSTICS[0m
+       Errors  are reported as [1m?MESSAGE [22mand, when they occur in a running pro‐
+       gram, [1m?MESSAGE IN [4m[22mline[24m[1m.  [22mA running program stops at  the  first  error;
+       the interpreter returns to the prompt.
+
+       [1mSYNTAX ERROR                [22mThe  statement  or  expression could not be
+                                   understood, including a number with a deci‐
+                                   mal point.
+
+       [1mTYPE MISMATCH               [22mA string was used where a number is needed,
+                                   or the reverse.
+
+       [1mILLEGAL FUNCTION CALL       [22mAn argument is out of range: [1mRND  [22mbelow  1,
+                                   [1mSQR [22mof a negative number, [1mMID$ [22mwith a start
+                                   below  1  or  a  negative  length, [1mLEFT$ [22mor
+                                   [1mRIGHT$ [22mwith a  negative  count,  or  [1mSPACE$[0m
+                                   outside 0 to 80.
+
+       [1mILLEGAL DIRECT              [22mA  statement  that  works only in a program
+                                   was typed at the prompt.
+
+       [1mDIVISION BY ZERO            [22mDivision or [1mMOD [22mby zero.
+
+       [1mSUBSCRIPT OUT OF RANGE      [22mAn array index is negative or  larger  than
+                                   the array size.
+
+       [1mBAD SUBSCRIPT               [22mA  [1mDIM  [22msize  is  negative  or  exceeds the
+                                   limit.
+
+       [1mOUT OF MEMORY               [22mAn array or program line could not be allo‐
+                                   cated.
+
+       [1mMISSING ( [22mor [1mMISSING )      [22mA function call or parenthesized expression
+                                   is not balanced.
+
+       [1mUNDEFINED LINE [4m[22mn[24m            A [1mGOTO [22mor [1mGOSUB [22mrefers to a line that  does
+                                   not exist.
+
+       [1mRETURN WITHOUT GOSUB[0m
+
+       [1mNEXT WITHOUT FOR            [22mControl structures are not matched.
+
+       [1mGOSUB NESTING TOO DEEP[0m
+
+       [1mFOR NESTING TOO DEEP        [22mMore  than 32 active [1mGOSUB[22ms or more than 16
+                                   active [1mFOR[22ms.
+
+       [1mOUT OF DATA                 READ [22mran past the last [1mDATA[22m.
+
+       These messages are printed by the commands and are not program  errors:
+       [1m?NEED QUOTED NAME [22m(a [1mSAVE [22mor [1mLOAD [22mwithout a file name in quotes), [1m?CAN‐[0m
+       [1mNOT  OPEN  [4m[22mname[24m (the file could not be opened), [1m?PROGRAM TOO LONG [22m(more
+       than 1000 lines), and [1m?REDO FROM START[22m, described under [1mINPUT[22m.
+
+[1mLIMITS[0m
+           Program lines                    1000
+           Characters in an input line      255
+           Characters in a string           80
+           Numeric array subscripts         0 to 5000
+           String array subscripts          0 to 500
+           Active FOR loops                 16
+           Active GOSUBs                    32
+           Integer range                    -2147483648 to 2147483647
+
+[1mEXAMPLES[0m
+       A program that prints the squares of 1 through 5:
+
+           10 FOR I = 1 TO 5
+           20 PRINT I; " SQUARED IS "; I*I
+           30 NEXT I
+           RUN
+
+       A subroutine called twice:
+
+           10 A = 3: GOSUB 100
+           20 A = 4: GOSUB 100
+           30 END
+           100 PRINT "SQR("; A; ") = "; SQR(A)
+           110 RETURN
+
+       Prompting for a string and a number:
+
+           10 INPUT "Name"; N$
+           20 INPUT "How many"; K
+           30 FOR I = 1 TO K: PRINT "HELLO, "; N$: NEXT I
+
+       Saving and reloading a program:
+
+           SAVE "squares"
+           NEW
+           LOAD "squares"
+
+       Running a program from a shell script:
+
+           (cat squares.bas; echo RUN) | basic
+
+[1mDIFFERENCES FROM MICROSOFT BASIC[0m
+       There is no floating point: a decimal point is a syntax error, [1m/  [22mtrun‐
+       cates,  and  functions  such as [1mSIN [22mand [1mLOG [22mdo not exist.  There are no
+       multi-dimensional arrays, no [1mTAB[22m, no [1mINSTR[22m, no [1mON [4m[22mexpr[24m [1mGOTO[22m,  no  user-
+       defined  functions,  and  no  multi-letter variable names.  [1mRND [22mtakes a
+       limit and returns an integer rather than a fraction.  [1m^ [22massociates from
+       right to left, so [1m2^3^2 [22mis 512.
+
+[1mBUGS[0m
+       Numbers outside the 32-bit range wrap silently when typed in answer  to
+       [1mINPUT[22m, given to [1mVAL[22m, or written as a literal in a program.
+
+       Redeclaring an array with [1mDIM [22mis not reported as an error.
+
+       [1mCHR$ [22mdoes not report an out-of-range argument.
+
+       [1mPRINT [22mprints the items before a syntax error in the same statement.
+
+       With the standard System V terminal settings the characters [1m@ [22mand [1m# [22mare
+       the  line-kill and erase characters and cannot be typed as ordinary in‐
+       put without a preceding backslash.
+
+[1mFILES[0m
+       [4mfile[24m        Text files created by [1mSAVE [22mand read by [1mLOAD[22m, in the current
+                   directory unless a path is given.
+
+[1mSEE ALSO[0m
+       [4mcc[24m(1), [4mstty[24m(1)
+
+                                 October 2026                         [4mBASIC[24m(1)

@@ -1,0 +1,563 @@
+.TH BASIC 1 "October 2026"
+.SH NAME
+basic \- extended integer BASIC interpreter
+.SH SYNOPSIS
+.B basic
+.SH DESCRIPTION
+.I Basic
+is an interactive BASIC interpreter written in strict K&R C for the AT&T 3B2
+and other System V systems.
+It is an
+.I integer
+BASIC: all numbers are signed 32-bit integers, and there is no floating point.
+Strings of up to 80 characters, one-dimensional arrays,
+subroutines, and file save and load are supported.
+.PP
+When started, the interpreter prints a banner and the prompt
+.RB `` "? " ''.
+A line that begins with a line number is stored in the program;
+any other line is executed immediately.
+Input is read from the standard input, so program text and commands
+may also be piped in.
+.PP
+Keywords may be typed in upper or lower case.
+Text outside double quotes is converted to upper case when a line is entered,
+so
+.B LIST
+shows keywords in upper case and string literals exactly as typed.
+.SH COMMANDS
+These are recognized only at the prompt, not inside a program.
+.TP 12
+.B RUN
+Clear all variables and run the program from its lowest line number.
+The random number seed is not reset (see
+.BR RND ).
+.TP
+.BI LIST " [n[\-m]]"
+List the program.
+.B LIST
+lists every line,
+.B "LIST 50"
+lists line 50,
+.B "LIST 50\-90"
+lists lines 50 through 90,
+.B "LIST 50\-"
+lists from line 50 to the end, and
+.B "LIST \-90"
+lists up to line 90.
+.TP
+.B NEW
+Delete the program and clear all variables.
+.TP
+.BI SAVE " ""file"""
+Write the program to
+.I file
+as text, one numbered line per line.
+Prints
+.BR SAVED .
+.TP
+.BI LOAD " ""file"""
+Delete the current program, then read numbered lines from
+.IR file .
+Prints
+.BR LOADED .
+The file name must be in double quotes.
+.TP
+.B BYE
+Leave the interpreter.
+End-of-file (usually CTRL-D) at the prompt does the same.
+.PP
+Typing a line number followed by nothing deletes that line.
+Typing a line number followed by text inserts or replaces that line.
+Line numbers may be any non-negative integer; lines are kept in order.
+.SH "VARIABLES AND TYPES"
+Variable names are a single letter.
+There are 26 numeric variables
+.BR A \- Z
+and 26 string variables
+.BR A$ \- Z$ .
+Arrays are one-dimensional:
+.BR A(n)
+is numeric and
+.BR A$(n)
+is a string array.
+Array subscripts run from 0 through the declared size.
+An array that is used without being declared with
+.B DIM
+has subscripts 0 through 10.
+Scalars and arrays of the same letter are separate variables
+(for example
+.B A
+and
+.BR A(1) ).
+Numeric variables and arrays start at 0 and string variables at the empty string.
+.PP
+Numbers are signed 32-bit integers, from \-2147483648 to 2147483647.
+Arithmetic that overflows wraps around silently.
+To write the smallest value, use
+.BR "\-2147483647\-1" .
+Strings hold at most 80 characters; longer results are silently truncated.
+.SH EXPRESSIONS
+Operators, from highest precedence to lowest:
+.PP
+.nf
+    ^                       exponentiation (right to left)
+    unary \-  unary +
+    *  /  MOD               multiply, divide, remainder
+    +  \-                    add, subtract
+    =  <>  <  >  <=  >=     comparison
+    NOT
+    AND
+    OR
+.fi
+.PP
+Division truncates toward zero.
+.B MOD
+takes the sign of its left operand.
+A negative exponent yields 0 (1 if the base is 1).
+Division or
+.B MOD
+by zero is an error.
+Because unary minus ranks below
+.BR ^ ,
+.B \-2^2
+is \-4.
+.PP
+Comparisons yield \-1 for true and 0 for false.
+.BR AND ,
+.BR OR ,
+and
+.B NOT
+operate bitwise on the 32-bit values, as in Microsoft BASIC.
+This means
+.B NOT 5
+is \-6, which is non-zero and therefore true when tested by
+.BR IF .
+.PP
+Strings may be joined with
+.BR + .
+Two strings may be compared with
+.BR = ,
+.BR <> ,
+.BR < ,
+.BR > ,
+.BR <= ,
+and
+.BR >= ;
+the comparison is by character code.
+Mixing strings and numbers in one expression is a
+.B TYPE MISMATCH
+error.
+.SH STATEMENTS
+Several statements may be placed on one line, separated by colons.
+.TP
+.B [LET] \fIvar\fP = \fIexpr\fP
+Assignment.
+.B LET
+is optional.
+.TP
+.B PRINT \fIlist\fP
+Print the items in
+.IR list ,
+which are expressions separated by semicolons or commas.
+.B ?
+may be used in place of
+.BR PRINT .
+A semicolon prints the next item immediately after the previous one.
+A comma moves to the next 14-column print zone.
+A trailing semicolon or comma suppresses the final newline.
+Numbers are printed with no leading or trailing blanks.
+.TP
+.B "INPUT [""prompt""; or ,] \fIvar\fP[,\fIvar\fP...]"
+Read values from the terminal.
+With a semicolon after the prompt, or no prompt, the prompt is followed by
+.RB `` "? "''.
+With a comma after the prompt, no question mark is printed.
+Several variables may be answered on one line separated by commas;
+if too few values are given,
+.RB `` "?? "''
+asks for the rest.
+A non-numeric answer to a numeric variable prints
+.B ?REDO FROM START
+and the whole
+.B INPUT
+is asked again.
+An empty numeric answer is taken as 0.
+End-of-file stops the program.
+.TP
+.B "IF \fIcond\fP THEN \fIstatement\fP [ELSE \fIstatement\fP]"
+.TP
+.B "IF \fIcond\fP THEN \fIline\fP [ELSE \fIline\fP]"
+.TP
+.B "IF \fIcond\fP GOTO \fIline\fP"
+Conditional execution.
+.I Cond
+is true if non-zero.
+A line number after
+.B THEN
+or
+.B ELSE
+means
+.BR GOTO .
+Statements following the chosen branch on the same line, separated by colons,
+are executed after it.
+.TP
+.B "GOTO \fIexpr\fP"
+.TP
+.B "GOSUB \fIexpr\fP"
+Jump to, or call as a subroutine, the line whose number is the value of
+.IR expr .
+Computed targets such as
+.B GOTO 100*N
+are allowed.
+Typing
+.B GOTO
+at the prompt starts the program at that line.
+.TP
+.B RETURN
+Return from the most recent
+.BR GOSUB .
+.TP
+.B "FOR \fIv\fP = \fIa\fP TO \fIb\fP [STEP \fIc\fP]"
+.TP
+.B "NEXT [\fIv\fP[,\fIv\fP...]]"
+Counting loop.
+The step defaults to 1 and may be negative.
+The body always executes at least once, even if the starting value is already
+past the limit, as in classic Microsoft BASIC.
+Restarting a
+.B FOR
+on a variable that is already active discards that loop and any loops inside it.
+.TP
+.B "DIM \fIA\fP(\fIn\fP)[,\fIB$\fP(\fIn\fP)...]"
+Declare arrays with subscripts 0 through
+.IR n .
+Numeric arrays may be up to size 5000 and string arrays up to 500.
+Declaring an existing array again discards its contents.
+.TP
+.B "DATA \fIitem\fP[,\fIitem\fP...]"
+.TP
+.B "READ \fIvar\fP[,\fIvar\fP...]"
+.TP
+.B RESTORE
+.B DATA
+holds numbers and quoted strings.
+.B READ
+takes the next items in program order, and
+.B RESTORE
+returns to the first item.
+Reading past the end is an
+.B OUT OF DATA
+error, and reading a string into a numeric variable or the reverse is a
+.B TYPE MISMATCH
+error.
+.TP
+.B "REM \fItext\fP"
+.TP
+.B "' \fItext\fP"
+A comment.
+Everything to the end of the line is ignored, colons included.
+.TP
+.B RANDOMIZE [\fIn\fP]
+Set the random number seed to
+.IR n ,
+or to the time of day if
+.I n
+is omitted.
+.TP
+.B CLS
+Send a form feed to the terminal.
+.TP
+.B END
+Stop the program.
+.TP
+.B STOP
+Stop the program and print
+.BR "BREAK IN \fIline\fP" .
+.PP
+.BR GOSUB ,
+.BR RETURN ,
+.BR FOR ,
+and
+.B NEXT
+may be used only inside a running program.
+At the prompt they produce
+.BR "?ILLEGAL DIRECT" .
+.SH FUNCTIONS
+.TP 14
+.BI RND( n )
+A pseudo-random integer from 1 through
+.IR n .
+.I n
+must be at least 1.
+The generator starts from a fixed seed every time
+.I basic
+is started, so a program that does not call
+.B RANDOMIZE
+produces the same sequence each time.
+The seed carries over from one
+.B RUN
+to the next within a session.
+.TP
+.BI SQR( n )
+Integer square root, rounded down.
+An error if
+.I n
+is negative.
+.TP
+.BI ABS( n )
+Absolute value.
+.TP
+.BI SGN( n )
+\-1, 0, or 1 according to the sign of
+.IR n .
+.TP
+.BI INT( n )
+Returns
+.IR n .
+It is provided for compatibility, since all values are already integers.
+.TP
+.BI LEN( s$ )
+Length of a string.
+.TP
+.BI ASC( s$ )
+Character code of the first character, or 0 for an empty string.
+.TP
+.BI VAL( s$ )
+The integer at the start of the string; 0 if there is none.
+.TP
+.BI CHR$( n )
+A one-character string whose code is the low eight bits of
+.IR n .
+.TP
+.BI STR$( n )
+The number as a string, with no leading blank.
+.TP
+.BI LEFT$( s$,n )
+The first
+.I n
+characters.
+.TP
+.BI RIGHT$( s$,n )
+The last
+.I n
+characters.
+.TP
+.BI MID$( s$,start [, len ])
+.I Len
+characters starting at position
+.IR start ,
+where the first character is position 1.
+If
+.I len
+is omitted, the rest of the string is returned.
+.TP
+.BI SPACE$( n )
+A string of
+.I n
+blanks, 0 through 80.
+.SH "INTERRUPTING"
+The interrupt key (usually DEL or CTRL-C) stops a running program, a
+.B LIST
+in progress, and prints
+.BR "BREAK IN \fIline\fP" .
+At the prompt it simply prints a new line and prompts again.
+Variables are kept, so the program can be examined or run again.
+.SH DIAGNOSTICS
+Errors are reported as
+.B ?MESSAGE
+and, when they occur in a running program,
+.B ?MESSAGE IN \fIline\fP.
+A running program stops at the first error; the interpreter returns to the prompt.
+.TP 28
+.B SYNTAX ERROR
+The statement or expression could not be understood,
+including a number with a decimal point.
+.TP
+.B TYPE MISMATCH
+A string was used where a number is needed, or the reverse.
+.TP
+.B ILLEGAL FUNCTION CALL
+An argument is out of range:
+.B RND
+below 1,
+.B SQR
+of a negative number,
+.B MID$
+with a start below 1 or a negative length,
+.B LEFT$
+or
+.B RIGHT$
+with a negative count, or
+.B SPACE$
+outside 0 to 80.
+.TP
+.B ILLEGAL DIRECT
+A statement that works only in a program was typed at the prompt.
+.TP
+.B DIVISION BY ZERO
+Division or
+.B MOD
+by zero.
+.TP
+.B SUBSCRIPT OUT OF RANGE
+An array index is negative or larger than the array size.
+.TP
+.B BAD SUBSCRIPT
+A
+.B DIM
+size is negative or exceeds the limit.
+.TP
+.B OUT OF MEMORY
+An array or program line could not be allocated.
+.TP
+.B MISSING ( \fRor\fP MISSING )
+A function call or parenthesized expression is not balanced.
+.TP
+.B UNDEFINED LINE \fIn\fP
+A
+.B GOTO
+or
+.B GOSUB
+refers to a line that does not exist.
+.TP
+.B RETURN WITHOUT GOSUB
+.TP
+.B NEXT WITHOUT FOR
+Control structures are not matched.
+.TP
+.B GOSUB NESTING TOO DEEP
+.TP
+.B FOR NESTING TOO DEEP
+More than 32 active
+.BR GOSUB s
+or more than 16 active
+.BR FOR s.
+.TP
+.B OUT OF DATA
+.B READ
+ran past the last
+.BR DATA .
+.PP
+These messages are printed by the commands and are not program errors:
+.B ?NEED QUOTED NAME
+(a
+.B SAVE
+or
+.B LOAD
+without a file name in quotes),
+.B ?CANNOT OPEN \fIname\fP
+(the file could not be opened),
+.B ?PROGRAM TOO LONG
+(more than 1000 lines), and
+.BR "?REDO FROM START" ,
+described under
+.BR INPUT .
+.SH LIMITS
+.nf
+    Program lines                    1000
+    Characters in an input line      255
+    Characters in a string           80
+    Numeric array subscripts         0 to 5000
+    String array subscripts          0 to 500
+    Active FOR loops                 16
+    Active GOSUBs                    32
+    Integer range                    \-2147483648 to 2147483647
+.fi
+.SH EXAMPLES
+A program that prints the squares of 1 through 5:
+.PP
+.nf
+    10 FOR I = 1 TO 5
+    20 PRINT I; " SQUARED IS "; I*I
+    30 NEXT I
+    RUN
+.fi
+.PP
+A subroutine called twice:
+.PP
+.nf
+    10 A = 3: GOSUB 100
+    20 A = 4: GOSUB 100
+    30 END
+    100 PRINT "SQR("; A; ") = "; SQR(A)
+    110 RETURN
+.fi
+.PP
+Prompting for a string and a number:
+.PP
+.nf
+    10 INPUT "Name"; N$
+    20 INPUT "How many"; K
+    30 FOR I = 1 TO K: PRINT "HELLO, "; N$: NEXT I
+.fi
+.PP
+Saving and reloading a program:
+.PP
+.nf
+    SAVE "squares"
+    NEW
+    LOAD "squares"
+.fi
+.PP
+Running a program from a shell script:
+.PP
+.nf
+    (cat squares.bas; echo RUN) | basic
+.fi
+.SH "DIFFERENCES FROM MICROSOFT BASIC"
+There is no floating point: a decimal point is a syntax error,
+.B /
+truncates,
+and functions such as
+.B SIN
+and
+.B LOG
+do not exist.
+There are no multi-dimensional arrays, no
+.BR TAB ,
+no
+.BR INSTR ,
+no
+.BR "ON \fIexpr\fP GOTO" ,
+no user-defined functions, and no multi-letter variable names.
+.B RND
+takes a limit and returns an integer rather than a fraction.
+.B ^
+associates from right to left, so
+.B 2^3^2
+is 512.
+.SH BUGS
+Numbers outside the 32-bit range wrap silently when typed in answer to
+.BR INPUT ,
+given to
+.BR VAL ,
+or written as a literal in a program.
+.PP
+Redeclaring an array with
+.B DIM
+is not reported as an error.
+.PP
+.B CHR$
+does not report an out-of-range argument.
+.PP
+.B PRINT
+prints the items before a syntax error in the same statement.
+.PP
+With the standard System V terminal settings the characters
+.B @
+and
+.B #
+are the line-kill and erase characters and cannot be typed as ordinary input
+without a preceding backslash.
+.SH FILES
+.TP 12
+.I file
+Text files created by
+.B SAVE
+and read by
+.BR LOAD ,
+in the current directory unless a path is given.
+.SH "SEE ALSO"
+.IR cc (1),
+.IR stty (1)

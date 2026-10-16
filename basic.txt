@@ -1,0 +1,351 @@
+BASIC(1)                    General Commands Manual                   BASIC(1)
+
+NAME
+       basic - extended integer BASIC interpreter
+
+SYNOPSIS
+       basic
+
+DESCRIPTION
+       Basic  is  an interactive BASIC interpreter written in strict K&R C for
+       the AT&T 3B2 and other System V systems.  It is an integer  BASIC:  all
+       numbers  are  signed  32-bit  integers, and there is no floating point.
+       Strings of up to 80 characters,  one-dimensional  arrays,  subroutines,
+       and file save and load are supported.
+
+       When started, the interpreter prints a banner and the prompt ``? ''.  A
+       line that begins with a line number is stored in the program; any other
+       line  is  executed immediately.  Input is read from the standard input,
+       so program text and commands may also be piped in.
+
+       Keywords may be typed in upper or  lower  case.   Text  outside  double
+       quotes is converted to upper case when a line is entered, so LIST shows
+       keywords in upper case and string literals exactly as typed.
+
+COMMANDS
+       These are recognized only at the prompt, not inside a program.
+
+       RUN         Clear  all  variables  and  run the program from its lowest
+                   line number.  The random number  seed  is  not  reset  (see
+                   RND).
+
+       LIST [n[-m]]
+                   List  the  program.   LIST  lists every line, LIST 50 lists
+                   line 50, LIST 50-90 lists lines 50  through  90,  LIST  50-
+                   lists  from  line  50  to the end, and LIST -90 lists up to
+                   line 90.
+
+       NEW         Delete the program and clear all variables.
+
+       SAVE "file" Write the program to file as text, one  numbered  line  per
+                   line.  Prints SAVED.
+
+       LOAD "file" Delete  the  current program, then read numbered lines from
+                   file.  Prints LOADED.  The file  name  must  be  in  double
+                   quotes.
+
+       BYE         Leave the interpreter.  End-of-file (usually CTRL-D) at the
+                   prompt does the same.
+
+       Typing  a  line number followed by nothing deletes that line.  Typing a
+       line number followed by text inserts or replaces that line.  Line  num‐
+       bers may be any non-negative integer; lines are kept in order.
+
+VARIABLES AND TYPES
+       Variable names are a single letter.  There are 26 numeric variables A-Z
+       and 26 string variables A$-Z$.  Arrays are one-dimensional: A(n) is nu‐
+       meric and A$(n) is a string array.  Array subscripts run from 0 through
+       the  declared  size.  An array that is used without being declared with
+       DIM has subscripts 0 through 10.  Scalars and arrays of the same letter
+       are separate variables (for example A and A(1)).  Numeric variables and
+       arrays start at 0 and string variables at the empty string.
+
+       Numbers are signed 32-bit integers,  from  -2147483648  to  2147483647.
+       Arithmetic that overflows wraps around silently.  To write the smallest
+       value,  use  -2147483647-1.  Strings hold at most 80 characters; longer
+       results are silently truncated.
+
+EXPRESSIONS
+       Operators, from highest precedence to lowest:
+
+           ^                       exponentiation (right to left)
+           unary -  unary +
+           *  /  MOD               multiply, divide, remainder
+           +  -                    add, subtract
+           =  <>  <  >  <=  >=     comparison
+           NOT
+           AND
+           OR
+
+       Division truncates toward  zero.   MOD  takes  the  sign  of  its  left
+       operand.   A negative exponent yields 0 (1 if the base is 1).  Division
+       or MOD by zero is an error.  Because unary minus ranks below ^, -2^2 is
+       -4.
+
+       Comparisons yield -1 for true and 0 for false.  AND, OR, and NOT  oper‐
+       ate  bitwise  on  the 32-bit values, as in Microsoft BASIC.  This means
+       NOT 5 is -6, which is non-zero and therefore true when tested by IF.
+
+       Strings may be joined with +.  Two strings may be compared with =,  <>,
+       <,  >, <=, and >=; the comparison is by character code.  Mixing strings
+       and numbers in one expression is a TYPE MISMATCH error.
+
+STATEMENTS
+       Several statements may be placed on one line, separated by colons.
+
+       [LET] var = expr
+              Assignment.  LET is optional.
+
+       PRINT list
+              Print the items in list,  which  are  expressions  separated  by
+              semicolons  or  commas.   ?   may  be used in place of PRINT.  A
+              semicolon prints the next item immediately  after  the  previous
+              one.   A comma moves to the next 14-column print zone.  A trail‐
+              ing semicolon or comma suppresses the  final  newline.   Numbers
+              are printed with no leading or trailing blanks.
+
+       INPUT ["prompt"; or ,] var[,var...]
+              Read  values  from  the  terminal.   With  a semicolon after the
+              prompt, or no prompt, the prompt is followed by ``? ''.  With  a
+              comma  after  the  prompt, no question mark is printed.  Several
+              variables may be answered on one line separated  by  commas;  if
+              too  few values are given, ``?? '' asks for the rest.  A non-nu‐
+              meric answer to a numeric variable prints ?REDO FROM  START  and
+              the  whole  INPUT  is  asked  again.  An empty numeric answer is
+              taken as 0.  End-of-file stops the program.
+
+       IF cond THEN statement [ELSE statement]
+
+       IF cond THEN line [ELSE line]
+
+       IF cond GOTO line
+              Conditional execution.  Cond is true if non-zero.  A line number
+              after THEN or ELSE means GOTO.  Statements following the  chosen
+              branch on the same line, separated by colons, are executed after
+              it.
+
+       GOTO expr
+
+       GOSUB expr
+              Jump  to,  or call as a subroutine, the line whose number is the
+              value of expr.  Computed targets such as GOTO 100*N are allowed.
+              Typing GOTO at the prompt starts the program at that line.
+
+       RETURN Return from the most recent GOSUB.
+
+       FOR v = a TO b [STEP c]
+
+       NEXT [v[,v...]]
+              Counting loop.  The step defaults to 1 and may be negative.  The
+              body always executes at least once, even if the  starting  value
+              is  already  past  the  limit,  as  in  classic Microsoft BASIC.
+              Restarting a FOR on a variable that is already  active  discards
+              that loop and any loops inside it.
+
+       DIM A(n)[,B$(n)...]
+              Declare  arrays with subscripts 0 through n.  Numeric arrays may
+              be up to size 5000 and string arrays up to  500.   Declaring  an
+              existing array again discards its contents.
+
+       DATA item[,item...]
+
+       READ var[,var...]
+
+       RESTORE
+              DATA  holds  numbers  and  quoted  strings.  READ takes the next
+              items in program order, and RESTORE returns to the  first  item.
+              Reading  past  the  end  is  an OUT OF DATA error, and reading a
+              string into a numeric variable or the reverse is a TYPE MISMATCH
+              error.
+
+       REM text
+
+       ' text A comment.  Everything to the end of the line is ignored, colons
+              included.
+
+       RANDOMIZE [n]
+              Set the random number seed to n, or to the time of day if  n  is
+              omitted.
+
+       CLS    Send a form feed to the terminal.
+
+       END    Stop the program.
+
+       STOP   Stop the program and print BREAK IN line.
+
+       GOSUB, RETURN, FOR, and NEXT may be used only inside a running program.
+       At the prompt they produce ?ILLEGAL DIRECT.
+
+FUNCTIONS
+       RND(n)        A  pseudo-random  integer from 1 through n.  n must be at
+                     least 1.  The generator starts from a  fixed  seed  every
+                     time  basic  is  started, so a program that does not call
+                     RANDOMIZE produces the same sequence each time.  The seed
+                     carries over from one RUN to the next within a session.
+
+       SQR(n)        Integer square root, rounded down.  An error if n is neg‐
+                     ative.
+
+       ABS(n)        Absolute value.
+
+       SGN(n)        -1, 0, or 1 according to the sign of n.
+
+       INT(n)        Returns n.  It is provided for compatibility,  since  all
+                     values are already integers.
+
+       LEN(s$)       Length of a string.
+
+       ASC(s$)       Character  code of the first character, or 0 for an empty
+                     string.
+
+       VAL(s$)       The integer at the start of the string;  0  if  there  is
+                     none.
+
+       CHR$(n)       A  one-character  string whose code is the low eight bits
+                     of n.
+
+       STR$(n)       The number as a string, with no leading blank.
+
+       LEFT$(s$,n)   The first n characters.
+
+       RIGHT$(s$,n)  The last n characters.
+
+       MID$(s$,start[,len])
+                     Len characters starting  at  position  start,  where  the
+                     first  character  is  position 1.  If len is omitted, the
+                     rest of the string is returned.
+
+       SPACE$(n)     A string of n blanks, 0 through 80.
+
+INTERRUPTING
+       The interrupt key (usually DEL or CTRL-C) stops a  running  program,  a
+       LIST  in  progress,  and prints BREAK IN line.  At the prompt it simply
+       prints a new line and prompts again.  Variables are kept, so  the  pro‐
+       gram can be examined or run again.
+
+DIAGNOSTICS
+       Errors  are reported as ?MESSAGE and, when they occur in a running pro‐
+       gram, ?MESSAGE IN line.  A running program stops at  the  first  error;
+       the interpreter returns to the prompt.
+
+       SYNTAX ERROR                The  statement  or  expression could not be
+                                   understood, including a number with a deci‐
+                                   mal point.
+
+       TYPE MISMATCH               A string was used where a number is needed,
+                                   or the reverse.
+
+       ILLEGAL FUNCTION CALL       An argument is out of range: RND  below  1,
+                                   SQR of a negative number, MID$ with a start
+                                   below  1  or  a  negative  length, LEFT$ or
+                                   RIGHT$ with a  negative  count,  or  SPACE$
+                                   outside 0 to 80.
+
+       ILLEGAL DIRECT              A  statement  that  works only in a program
+                                   was typed at the prompt.
+
+       DIVISION BY ZERO            Division or MOD by zero.
+
+       SUBSCRIPT OUT OF RANGE      An array index is negative or  larger  than
+                                   the array size.
+
+       BAD SUBSCRIPT               A  DIM  size  is  negative  or  exceeds the
+                                   limit.
+
+       OUT OF MEMORY               An array or program line could not be allo‐
+                                   cated.
+
+       MISSING ( or MISSING )      A function call or parenthesized expression
+                                   is not balanced.
+
+       UNDEFINED LINE n            A GOTO or GOSUB refers to a line that  does
+                                   not exist.
+
+       RETURN WITHOUT GOSUB
+
+       NEXT WITHOUT FOR            Control structures are not matched.
+
+       GOSUB NESTING TOO DEEP
+
+       FOR NESTING TOO DEEP        More  than 32 active GOSUBs or more than 16
+                                   active FORs.
+
+       OUT OF DATA                 READ ran past the last DATA.
+
+       These messages are printed by the commands and are not program  errors:
+       ?NEED QUOTED NAME (a SAVE or LOAD without a file name in quotes), ?CAN‐
+       NOT  OPEN  name (the file could not be opened), ?PROGRAM TOO LONG (more
+       than 1000 lines), and ?REDO FROM START, described under INPUT.
+
+LIMITS
+           Program lines                    1000
+           Characters in an input line      255
+           Characters in a string           80
+           Numeric array subscripts         0 to 5000
+           String array subscripts          0 to 500
+           Active FOR loops                 16
+           Active GOSUBs                    32
+           Integer range                    -2147483648 to 2147483647
+
+EXAMPLES
+       A program that prints the squares of 1 through 5:
+
+           10 FOR I = 1 TO 5
+           20 PRINT I; " SQUARED IS "; I*I
+           30 NEXT I
+           RUN
+
+       A subroutine called twice:
+
+           10 A = 3: GOSUB 100
+           20 A = 4: GOSUB 100
+           30 END
+           100 PRINT "SQR("; A; ") = "; SQR(A)
+           110 RETURN
+
+       Prompting for a string and a number:
+
+           10 INPUT "Name"; N$
+           20 INPUT "How many"; K
+           30 FOR I = 1 TO K: PRINT "HELLO, "; N$: NEXT I
+
+       Saving and reloading a program:
+
+           SAVE "squares"
+           NEW
+           LOAD "squares"
+
+       Running a program from a shell script:
+
+           (cat squares.bas; echo RUN) | basic
+
+DIFFERENCES FROM MICROSOFT BASIC
+       There is no floating point: a decimal point is a syntax error, /  trun‐
+       cates,  and  functions  such as SIN and LOG do not exist.  There are no
+       multi-dimensional arrays, no TAB, no INSTR, no ON expr GOTO,  no  user-
+       defined  functions,  and  no  multi-letter variable names.  RND takes a
+       limit and returns an integer rather than a fraction.  ^ associates from
+       right to left, so 2^3^2 is 512.
+
+BUGS
+       Numbers outside the 32-bit range wrap silently when typed in answer  to
+       INPUT, given to VAL, or written as a literal in a program.
+
+       Redeclaring an array with DIM is not reported as an error.
+
+       CHR$ does not report an out-of-range argument.
+
+       PRINT prints the items before a syntax error in the same statement.
+
+       With the standard System V terminal settings the characters @ and # are
+       the  line-kill and erase characters and cannot be typed as ordinary in‐
+       put without a preceding backslash.
+
+FILES
+       file        Text files created by SAVE and read by LOAD, in the current
+                   directory unless a path is given.
+
+SEE ALSO
+       cc(1), stty(1)
+
+                                 October 2026                         BASIC(1)
