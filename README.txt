@@ -1,3 +1,17 @@
+Integer Basic Interpreter for the AT&T 3b2 computer.
+Created using Lumo and Claude 2026 October 16
+
+I have a minature build of a 3b2 running AT&T Unix SysV on a raspberry pi.
+https://www.gaunt.org/pub/3b2/
+https://www.gaunt.org/pub/3b2/3b2-matrix.jpg
+
+The emulator runs the simh implementation as provided by loomcom.com
+https://loomcom.com/3b2
+
+So why does this exist? Why not? I figured this has never been done and probably
+will never be repeated. A nice experiment to implement a new thing for an old
+computer using modern tools.
+
 --------------------------------------------------------------------------------
 AT&T 3b2
 3b2$ uname -a
