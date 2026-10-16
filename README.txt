@@ -1,5 +1,7 @@
 Integer Basic Interpreter for the AT&T 3b2 computer.
-Created using Lumo and Claude 2026 October 16
+Created using Lumo (initial) and Claude (ongoing) 2026 October.
+It will compile on a 3b2 using the native C compiler and it will also run with
+or  without optimization (-O). 
 
 I have a minature build of a 3b2 running AT&T Unix SysV on a raspberry pi.
 https://www.gaunt.org/pub/3b2/
@@ -10,8 +12,13 @@ https://loomcom.com/3b2
 
 So why does this exist? Why not? I figured this has never been done and probably
 will never be repeated. A nice experiment to implement a new thing for an old
-computer using modern tools.
+computer using modern tools. I needed a reason to expose myself to software
+development using AI and this seemed like something that would have no overlap
+with any existing projects. Plus, the 3b2 was the first real computer I began
+my career as a *nix admin etc.
 
+Claude created some test scripts and it does pass the prescribed tests.
+Certainly not exhaustive, however, seems good enough for a first run.
 --------------------------------------------------------------------------------
 AT&T 3b2
 3b2$ uname -a
