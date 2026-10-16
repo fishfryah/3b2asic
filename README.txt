@@ -39,7 +39,7 @@ $ uname -a
 Linux hal2k 7.0.0-29-generic #29~24.04.2-Ubuntu SMP PREEMPT_DYNAMIC Wed Aug 12 17:25:56 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 
 sum -s <file>
-8909 83 basic.c
+8899 83 basic.c
 32108 25 basic.1
 52686 34 basic.man
 65340 29 basic.txt
