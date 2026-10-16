@@ -1,6 +1,9 @@
 10 REM FORTUNE COOKIE PROGRAM (99 FORTUNES)
-20 RANDOMIZE TIMER
-30 F = INT(RND * 99) + 1
+15 PRINT "Good values for the seed are two digit numbers."
+20 INPUT "Enter a seed for the randomizer, Break (CNTRL-C) to quit"; S
+21 RANDOMIZE
+30 F = INT(RND(S)+1)
+35 PRINT "============================================================"
 40 PRINT "YOUR FORTUNE COOKIE SAYS:"
 50 IF F = 1 THEN PRINT "A thrilling journey lies ahead."
 60 IF F = 2 THEN PRINT "Your hard work will soon pay off."
@@ -101,5 +104,5 @@
 1010 IF F = 97 THEN PRINT "Your open-mindedness will invite brilliant concepts."
 1020 IF F = 98 THEN PRINT "A secure future is being built by your choices today."
 1030 IF F = 99 THEN PRINT "You will always find a way to succeed."
-1040 GOTO 20
-
+1035 PRINT "============================================================"
+1040 GOTO 15
